@@ -35,9 +35,13 @@
                srcdir="${dir.local.src.main}"
                excludes="**/package-info.java"
                destdir="${dir.local.build.main}" includes="**/*.java,module-info.java">
-            <modulepath>
-                <pathelement location="${dir.global.lib}"/>
-            </modulepath>
+            <classpath>
+                <pathelement location="${dir.global.lib}/cid.jar"/>
+                <pathelement location="${dir.global.lib}/ipfs.jar"/>
+                <pathelement location="${dir.global.lib}/multiaddr.jar"/>
+                <pathelement location="${dir.global.lib}/multibase.jar"/>
+                <pathelement location="${dir.global.lib}/multihash.jar"/>
+            </classpath>
         </javac>
 
         <jar destfile="${dir.local.build.main}/${ant.project.name}.jar" filesetmanifest="mergewithoutmain"
@@ -67,6 +71,11 @@
                 <pathelement location="${dir.local.build.main}/${ant.project.name}.jar" />
                 <pathelement location="${dir.global.lib}/junit-4.12.jar"/>
                 <pathelement location="${dir.global.lib}/hamcrest-all-1.3.jar"/>
+                <pathelement location="${dir.global.lib}/cid.jar"/>
+                <pathelement location="${dir.global.lib}/ipfs.jar"/>
+                <pathelement location="${dir.global.lib}/multiaddr.jar"/>
+                <pathelement location="${dir.global.lib}/multibase.jar"/>
+                <pathelement location="${dir.global.lib}/multihash.jar"/>
             </classpath>
         </javac>
     </target>
@@ -79,6 +88,11 @@
                 <pathelement location="${dir.local.build.main}/${ant.project.name}.jar" />
                 <pathelement location="${dir.global.lib}/junit-4.12.jar"/>
                 <pathelement location="${dir.global.lib}/hamcrest-all-1.3.jar"/>
+                <pathelement location="${dir.global.lib}/cid.jar"/>
+                <pathelement location="${dir.global.lib}/ipfs.jar"/>
+                <pathelement location="${dir.global.lib}/multiaddr.jar"/>
+                <pathelement location="${dir.global.lib}/multibase.jar"/>
+                <pathelement location="${dir.global.lib}/multihash.jar"/>
             </classpath>
             <formatter type="plain" usefile="false" />
             <formatter type="xml" />
