@@ -5,16 +5,20 @@ import java.net.ServerSocket;
 
 import org.aion.maven.state.ProjectedState;
 
+import io.ipfs.api.IPFS;
+
 
 /**
  * For now, we will just run this on a single thread.
  */
 public class WebServer {
+    private final IPFS ipfs;
     private final ProjectedState projection;
     // We will close the thread's descriptors on shutdown.
     private WebThread thread;
 
-    public WebServer(ProjectedState projection) {
+    public WebServer(IPFS ipfs, ProjectedState projection) {
+        this.ipfs = ipfs;
         this.projection = projection;
     }
 
@@ -23,7 +27,7 @@ public class WebServer {
             throw new AssertionError("Server already running");
         }
         ServerSocket server = new ServerSocket(2000);
-        this.thread = new WebThread(this.projection, server);
+        this.thread = new WebThread(this.ipfs, this.projection, server);
         this.thread.start();
     }
 

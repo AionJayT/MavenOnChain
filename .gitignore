@@ -26,4 +26,6 @@ testreports/
 # ant
 .ant-targets-build.xml
 
+# Maven
+target/
 # generated files

@@ -2,6 +2,8 @@ import org.aion.maven.blockchain.BlockchainReader;
 import org.aion.maven.state.ProjectedState;
 import org.aion.maven.web.WebServer;
 
+import io.ipfs.api.IPFS;
+
 
 public class Reader {
     public static void main(String[] args) throws Throwable {
@@ -11,7 +13,8 @@ public class Reader {
         // Create all the components.
         ProjectedState projection = new ProjectedState();
         BlockchainReader reader = new BlockchainReader(projection);
-        WebServer server = new WebServer(projection);
+        IPFS ipfs = new IPFS("localhost", 5001);
+        WebServer server = new WebServer(ipfs, projection);
         
         // Start up the components.
         server.start(port);

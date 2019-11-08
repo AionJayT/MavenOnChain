@@ -2,12 +2,15 @@ package org.aion.maven.web;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import org.aion.maven.state.IpfsReference;
 import org.aion.maven.state.MavenTuple;
 import org.aion.maven.state.ProjectedState;
+
+import io.ipfs.api.IPFS;
+import io.ipfs.multihash.Multihash;
 
 
 /**
@@ -15,11 +18,13 @@ import org.aion.maven.state.ProjectedState;
  * This is mostly just split out for testing and clarity reasons.
  */
 public class WebThread extends Thread {
+    private final IPFS ipfs;
     private final ProjectedState projection;
     private ServerSocket server;
     private Socket currentClient;
 
-    public WebThread(ProjectedState projection, ServerSocket server) {
+    public WebThread(IPFS ipfs, ProjectedState projection, ServerSocket server) {
+        this.ipfs = ipfs;
         this.projection = projection;
         this.server = server;
     }
@@ -57,6 +62,17 @@ public class WebThread extends Thread {
                     }
                     if (null != ipfsStream) {
                         // Pipe the data back as a 200.
+                        String httpResponse = "HTTP/1.1 200 OK\r\n\r\n";
+                        OutputStream output = sock.getOutputStream();
+                        output.write(httpResponse.getBytes("UTF-8"));
+                        byte[] data = new byte[1024];
+                        int length = ipfsStream.read(data);
+                        while (-1 != length) {
+                            System.out.println("READ " + length);
+                            output.write(data, 0, length);
+                            length = ipfsStream.read(data);
+                        }
+                        
                         // We "opened" this stream by resolveIpfsDataStream, so close it.
                         ipfsStream.close();
                     } else {
@@ -80,10 +96,17 @@ public class WebThread extends Thread {
     private InputStream resolveIpfsDataStream(MavenTuple requestedTuple) {
         InputStream dataStream = null;
         // 1) Resolve this to an IPFS CID.
-        IpfsReference reference = this.projection.resolveReference(requestedTuple);
+        Multihash reference = this.projection.resolveReference(requestedTuple);
         // 2) Ask for the data stream from this CID.
         if (null != reference) {
-            // TODO:  Implement when IPFS added.
+            // Note that we should have pinned this before adding it to the projection so a failure to find this would be a fatal error.
+            try {
+                dataStream = this.ipfs.catStream(reference);
+            } catch (IOException e) {
+                // For now, just log that this happened until we understand why/when (may mean "not found").
+                System.err.println("UNEXPECTED EXCEPTION");
+                e.printStackTrace();
+            }
         }
         return dataStream;
     }
