@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="build_jar" name="Create Runnable Jar for Project TransactionHelper">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <!--define folder properties-->
+    <property name="dir.local.workspace" value="."/>
+    <property name="dir.local.build" value="${dir.local.workspace}/build/"/>
+    <property name="dir.local.src" value="${dir.local.workspace}/src"/>
+    <property name="dir.global.lib" value="${dir.local.workspace}/../../lib"/>
+    <target name="build_jar">
+        <mkdir dir="${dir.local.build}"/>
+        <javac debug="true" debuglevel="source,lines,vars" includeantruntime="false" release="10"
+            srcdir="${dir.local.src}"
+            destdir="${dir.local.build}" includes="**/*.java,module-info.java">
+            <modulepath>
+                <pathelement location="${dir.global.lib}/ed25519.jar"/>
+                <pathelement location="${dir.global.lib}/modRlp.jar"/>
+                <pathelement location="${dir.global.lib}/org-aion-avm-api-ec1785d.jar"/>
+                <pathelement location="${dir.global.lib}/org-aion-avm-userlib-ec1785d.jar"/>
+            </modulepath>
+        </javac>
+        <jar destfile="${dir.local.workspace}/../tooling/mavenonipfsTool.jar">
+            <fileset dir="${dir.local.build}/"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.global.lib}/ed25519.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.global.lib}/modRlp.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.global.lib}/modUtil.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.global.lib}/org-aion-avm-api-ec1785d.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.global.lib}/org-aion-avm-userlib-ec1785d.jar"/>
+        </jar>
+    </target>
+    <target name="clean" >
+	<delete dir="${dir.local.build}"/>
+        <delete file="${dir.local.workspace}/../tooling/mavenonipfsTool.jar"/>
+    </target>
+</project>
