@@ -30,7 +30,7 @@ public class Rpc {
                 .build();
     }
 
-    public Result<List<TransactionLog>> getLatestFilteredLogs(long startingPoint, Set<Topic> firstTopicFilterUnion, Address reportingContract) throws InterruptedException {
+    public Result<List<TransactionLog>> getLatestFilteredLogs(long startingPoint, Set<Topic> firstTopicFilterUnion, Address reportingContract) {
         if (startingPoint < 1) {
             throw new IllegalArgumentException("Starting point must be a positive integer.");
         }
