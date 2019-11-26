@@ -1,5 +1,6 @@
 package org.aion.maven.types;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.aion.maven.blockchain.Codecs;
@@ -47,6 +48,16 @@ public final class Topic {
      */
     public String renderedAsHexNumber() {
         return "0x" + Codecs.bytesToHexString(this.bytes);
+    }
+
+    public String extractAsNullTerminatedString() {
+        int indexOfNull = -1;
+        for (int i = 0; (i < this.bytes.length) && (-1 == indexOfNull); ++i) {
+            if (0x0 == this.bytes[i]) {
+                indexOfNull = i;
+            }
+        }
+        return new String(this.bytes, 0, indexOfNull, StandardCharsets.UTF_8);
     }
 
     @Override

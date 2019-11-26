@@ -1,5 +1,6 @@
 package org.aion.maven.types;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 import org.junit.Assert;
@@ -111,6 +112,13 @@ public class TypesTest {
         Assert.assertEquals(one1, one2);
         Assert.assertEquals(one2, one1);
         Assert.assertNotEquals(one1, two1);
+    }
+
+    @Test
+    public void testTopicAsString() {
+        String foobar = "foobar";
+        Topic topic = Topic.createFromArbitraryData(foobar.getBytes(StandardCharsets.UTF_8));
+        Assert.assertEquals(foobar, topic.extractAsNullTerminatedString());
     }
 
 
