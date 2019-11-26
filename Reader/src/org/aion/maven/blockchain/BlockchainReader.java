@@ -149,10 +149,10 @@ public class BlockchainReader implements ILogStateListener {
         // For now, we are going to ignore claim/declaim.
         if (name.equals(CLAIM_GROUP_ID)) {
             event = null;
-            System.out.println("CLAIM: " + log.topics.get(3).extractAsNullTerminatedString());
+            System.out.println("CLAIM: " + log.topics.get(2).extractAsNullTerminatedString());
         } else if (name.equals(DECLAIM_GROUP_ID)) {
             event = null;
-            System.out.println("DECLAIM: " + log.topics.get(3).extractAsNullTerminatedString());
+            System.out.println("DECLAIM: " + log.topics.get(2).extractAsNullTerminatedString());
         } else if (name.equals(PublishEvent.PUBLISH)) {
             event = PublishEvent.readFromLog(log);
             System.out.println("PUBLISH: "
