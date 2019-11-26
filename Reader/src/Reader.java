@@ -1,5 +1,7 @@
 import org.aion.maven.blockchain.BlockchainReader;
+import org.aion.maven.blockchain.Rpc;
 import org.aion.maven.state.ProjectedState;
+import org.aion.maven.types.Address;
 import org.aion.maven.web.WebServer;
 
 import io.ipfs.api.IPFS;
@@ -10,11 +12,16 @@ public class Reader {
     public static void main(String[] args) throws Throwable {
         // For now, the port is just hard-coded.
         int port = 2000;
+        String kernelHostname = "localhost";
+        int kernelPort = 8545;
+        Address contractAddress = null;
+        long startingBlockNumber = 1;
         
         // Create all the components.
         ProjectedState<Multihash> projection = new ProjectedState<>();
-        BlockchainReader reader = new BlockchainReader(projection);
+        Rpc rpc = new Rpc(kernelHostname, kernelPort);
         IPFS ipfs = new IPFS("localhost", 5001);
+        BlockchainReader reader = new BlockchainReader(ipfs, projection, rpc, contractAddress, startingBlockNumber);
         WebServer server = new WebServer(ipfs, projection);
         
         // Start up the components.
