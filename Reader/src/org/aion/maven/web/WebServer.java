@@ -6,6 +6,7 @@ import java.net.ServerSocket;
 import org.aion.maven.state.ProjectedState;
 
 import io.ipfs.api.IPFS;
+import io.ipfs.multihash.Multihash;
 
 
 /**
@@ -13,11 +14,11 @@ import io.ipfs.api.IPFS;
  */
 public class WebServer {
     private final IPFS ipfs;
-    private final ProjectedState projection;
+    private final ProjectedState<Multihash> projection;
     // We will close the thread's descriptors on shutdown.
     private WebThread thread;
 
-    public WebServer(IPFS ipfs, ProjectedState projection) {
+    public WebServer(IPFS ipfs, ProjectedState<Multihash> projection) {
         this.ipfs = ipfs;
         this.projection = projection;
     }

@@ -19,11 +19,11 @@ import io.ipfs.multihash.Multihash;
  */
 public class WebThread extends Thread {
     private final IPFS ipfs;
-    private final ProjectedState projection;
+    private final ProjectedState<Multihash> projection;
     private ServerSocket server;
     private Socket currentClient;
 
-    public WebThread(IPFS ipfs, ProjectedState projection, ServerSocket server) {
+    public WebThread(IPFS ipfs, ProjectedState<Multihash> projection, ServerSocket server) {
         this.ipfs = ipfs;
         this.projection = projection;
         this.server = server;

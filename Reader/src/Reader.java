@@ -3,6 +3,7 @@ import org.aion.maven.state.ProjectedState;
 import org.aion.maven.web.WebServer;
 
 import io.ipfs.api.IPFS;
+import io.ipfs.multihash.Multihash;
 
 
 public class Reader {
@@ -11,7 +12,7 @@ public class Reader {
         int port = 2000;
         
         // Create all the components.
-        ProjectedState projection = new ProjectedState();
+        ProjectedState<Multihash> projection = new ProjectedState<>();
         BlockchainReader reader = new BlockchainReader(projection);
         IPFS ipfs = new IPFS("localhost", 5001);
         WebServer server = new WebServer(ipfs, projection);
