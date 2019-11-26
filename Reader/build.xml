@@ -42,6 +42,7 @@
                 <pathelement location="${dir.global.lib}/multibase.jar"/>
                 <pathelement location="${dir.global.lib}/multihash.jar"/>
                 <pathelement location="${dir.global.lib}/minimal-json-0.9.5.jar"/>
+                <pathelement location="${dir.global.lib}/org-aion-avm-userlib-ec1785d.jar"/>
             </classpath>
         </javac>
 
@@ -78,6 +79,7 @@
                 <pathelement location="${dir.global.lib}/multibase.jar"/>
                 <pathelement location="${dir.global.lib}/multihash.jar"/>
                 <pathelement location="${dir.global.lib}/minimal-json-0.9.5.jar"/>
+                <pathelement location="${dir.global.lib}/org-aion-avm-userlib-ec1785d.jar"/>
             </classpath>
         </javac>
     </target>
@@ -96,6 +98,7 @@
                 <pathelement location="${dir.global.lib}/multibase.jar"/>
                 <pathelement location="${dir.global.lib}/multihash.jar"/>
                 <pathelement location="${dir.global.lib}/minimal-json-0.9.5.jar"/>
+                <pathelement location="${dir.global.lib}/org-aion-avm-userlib-ec1785d.jar"/>
             </classpath>
             <formatter type="plain" usefile="false" />
             <formatter type="xml" />
