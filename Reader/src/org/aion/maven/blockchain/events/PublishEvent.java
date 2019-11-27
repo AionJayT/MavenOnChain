@@ -1,4 +1,4 @@
-package org.aion.maven.blockchain;
+package org.aion.maven.blockchain.events;
 
 import org.aion.avm.userlib.abi.ABIDecoder;
 import org.aion.maven.state.MavenTuple;

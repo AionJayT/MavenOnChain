@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.aion.maven.blockchain.Rpc.Result;
+import org.aion.maven.blockchain.events.PublishEvent;
 import org.aion.maven.state.ProjectedState;
 import org.aion.maven.types.Address;
 import org.aion.maven.types.Topic;
