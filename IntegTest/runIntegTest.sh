@@ -2,7 +2,8 @@
 
 IPFS1_PATH="./ipfs1"
 IPFS2_PATH="./ipfs2"
-NODE_IP="/ip4/127.0.0.1/tcp"
+LOCAL_HOST="127.0.0.1"
+NODE_IP="/ip4/$LOCAL_HOST/tcp"
 NODE_PORT_SWARM1="4001"
 NODE_PORT_SWARM2="4002"
 NODE_PORT_API1="5001"
@@ -12,66 +13,124 @@ NODE_PORT_GATEWAY2="9002"
 LOG_KERNEL="kernel.log"
 LOG_BOOTSTRAP="bootstrap.log"
 LOG_BLOCKSIGNER="blocksigner.log"
+LOG_READER="reader.log"
+LOG_MVN="mvn.log"
+KERNEL_RPC_PORT="8545"
+WEB_SERVER_LISTEN_PORT="2000"
+LOG_LISTEN_START_BLOCK="3"
+MAVEN_CONTRACT_DEPLOY_ADDRESS="0xa01f53d4e4521941c68ba3570f0a4f1618363ceed09b45fa715b230eaae1a232"
+GROUP_ID1="testing"
 
+function print_log()
+{
+    echo
+    echo "$1"
+    echo
+}
 
 function clean_log()
 {
     rm $LOG_KERNEL
     rm $LOG_BOOTSTRAP
     rm $LOG_BLOCKSIGNER
+    rm $LOG_READER
+    rm $LOG_MVN
+}
+
+function clean_mvn_dependency()
+{
+    print_log "Clean Downstream folder and the maven dependency."
+    rm -r ./Downstream/target
+    # Clean the groupID folder in the maven default repo
+    rm -r ~/.m2/repository/$GROUP_ID1
+}
+
+function retry_10()
+{
+    if [[ "$1" -eq "10" ]]
+    then
+        print_log "Retry 10 times, exit this shell script!"
+        exit 1
+    fi
 }
 
 function shutdown_ipfs()
 {
-    echo
-    echo "Shutdown ipfs1 daemon..."
+    print_log "Shutdown ipfs1 daemon..."
     kill -SIGINT $PID_NODE1
 
-    echo "Shutdown ipfs2 daemon..."
+    print_log "Shutdown ipfs2 daemon..."
     kill -SIGINT $PID_NODE2
 
     COUNT=$(pgrep ipfs | wc -l)
-    echo "Ipfs shutdown remaining processes: $COUNT"
+    print_log "Ipfs shutdown remaining processes: $COUNT"
+    RETRY=0
     while [ $COUNT -ne 0 ]
     do
         sleep 1
         COUNT=$(pgrep ipfs | wc -l)
-        echo "Ipfs shutdown remaining processes: $COUNT"
+        ((RETRY++))
+        retry_10 $RETRY
+        echo "Ipfs shutdown remaining processes: $COUNT, retries: $RETRY"
     done
-    echo "Ipfs nodes shutdown finished."
-    echo
+    print_log "Ipfs nodes shutdown finished."
+}
+
+function shutdown_reader()
+{
+    print_log "Shutdown reader..."
+
+    kill -SIGTERM $PID_READER
+
+    COUNT=$(ps $PID_READER | grep "Reader" | wc -l)
+
+    print_log "Shutdown reader: $COUNT"
+
+    RETRY=0
+    while [ $COUNT -ne 0 ]
+    do
+        kill -SIGTERM $PID_READER
+        sleep 1
+        COUNT=$(ps $PID_READER | grep "Reader" | wc -l)
+        retry_10 $RETRY
+        ((RETRY++))
+        echo "shutdown remaining processes: $COUNT, retries: $RETRY"
+    done
+
+    print_log "Reader shutdown finished."
 }
 
 function shutdown_oan()
 {
-    echo
-    echo "Shutdown the OAN kernel..."
+    print_log "Shutdown the OAN kernel..."
 
     trap 'trap - SIGTERM && kill $PID_OAN' SIGINT SIGTERM EXIT
 
     check_kernel_shutdown_log
 
-    echo "The OAN kernel shutdown finished."
-    echo
+    print_log "The OAN kernel shutdown finished."
 }
 
 function shutdown_blocksigner()
 {
-    echo
-    echo "Shutdown blocksigner..."
-    #Can't terminate the blocksigner by sending Ctrl + C, just hack it by SIGKILL
-    kill -SIGKILL $PID_BLOCKSIGNER
+    print_log "Shutdown blocksigner..."
+
+    #Can't terminate the blocksigner by sending Ctrl + C, just hack it by SIGTERM
+    kill -SIGTERM $PID_BLOCKSIGNER
 
     COUNT=$(ps $PID_BLOCKSIGNER | grep "org.aion.staker.ExternalStaker" | wc -l)
 
+    RETRY=0
     while [ $COUNT -ne 0 ]
     do
         sleep 1
-        echo "Waiting the blocksigner shutdown"
+        kill -SIGTERM $PID_BLOCKSIGNER
+        retry_10 $RETRY
+        ((RETRY++))
+        echo "Waiting the blocksigner shutdown, retries: $RETRY"
     done
 
-    echo "The blocksigner shutdown finished."
-    echo
+    print_log "The blocksigner shutdown finished."
 }
 
 function check_bootstrap_log()
@@ -118,18 +177,46 @@ function check_blocksigner_log()
     done
 }
 
-echo "Start the integration env setup..."
+function check_reader_log()
+{
+    COUNT=$(cat $LOG_READER | grep "$1" | wc -l)
+    while [ $COUNT -eq 0 ]
+    do
+        sleep 1
+        echo "Waiting the reader print <$1>..."
+        COUNT=$(cat $LOG_READER | grep "$1" | wc -l)
+    done
 
-echo
-echo "Clean up the ipfs folder..."
-echo
+    print_log "Found the log event <$1>"
+}
+
+function shutdown_all()
+{
+    shutdown_ipfs
+    shutdown_blocksigner
+    shutdown_oan
+    shutdown_reader
+}
+
+function test_failure()
+{
+    print_log "Integration test failure!, shutdown all processes!"
+
+    shutdown_all
+}
+
+print_log "Start the integration env setup..."
+print_log "Clean up the ipfs folder..."
+
 rm -rf $IPFS1_PATH $IPFS2_PATH
-echo "Clean up the log genarated by the privious executing result..."
+
+clean_mvn_dependency
+
+print_log "Clean up the log genarated by the privious executing result..."
+
 clean_log
 
-echo
-echo "Init 2 ipfs nodes and copy the preset config into the folders."
-echo
+print_log "Init 2 ipfs nodes and copy the preset config into the folders."
 
 #This script assume you already installed the go-ipfs.
 
@@ -139,47 +226,46 @@ ipfs config --json Addresses '{"Swarm": ["/ip4/127.0.0.1/tcp/4001"], "Announce":
 ipfs config --bool Discovery.MDNS.Enabled "false"
 ipfs bootstrap rm --all
 NODE_ID1=$(ipfs id -f="<id>\n")
-echo
-echo "Generate node1Id: $NODE_ID1"
-echo
+
+print_log "Generate node1Id: $NODE_ID1"
+
 export IPFS_PATH=$IPFS2_PATH
 ipfs init
 ipfs config --json Addresses '{"Swarm": ["/ip4/127.0.0.1/tcp/4002"], "Announce": [], "NoAnnounce": [], "API": "/ip4/127.0.0.1/tcp/5002", "Gateway": "/ip4/127.0.0.1/tcp/9002"}'
 ipfs config --bool Discovery.MDNS.Enabled "false"
 ipfs bootstrap rm --all
 NODE_ID2=$(ipfs id -f="<id>\n")
-echo
-echo "Generated node2Id: $NODE_ID2"
-echo
 
-echo "Adding node1 info to the node2 bootstrap list"
-echo
+print_log "Generated node2Id: $NODE_ID2"
+
+print_log "Adding node1 info to the node2 bootstrap list"
+
 ipfs bootstrap add "$NODE_IP/$NODE_PORT_SWARM1/ipfs/$NODE_ID1"
-echo
-echo "Adding node2 info to the node1 bootstrap list"
-echo
+
+print_log "Adding node2 info to the node1 bootstrap list"
+
 export IPFS_PATH=$IPFS1_PATH
 ipfs bootstrap add "$NODE_IP/$NODE_PORT_SWARM2/ipfs/$NODE_ID2"
-echo
 
-echo "Executing the ipfs node1 in the background"
+print_log "Executing the ipfs node1 in the background"
 ipfs daemon &
 
 PID_NODE1=$(ps aux | grep -i 'ipfs daemon$' | awk 'NR==1{print $2}')
-echo
-echo "The node1 PID: $PID_NODE1"
-echo
+
+print_log "The node1 PID: $PID_NODE1"
 
 export IPFS_PATH=$IPFS2_PATH
-echo "Executing the ipfs node2 in the background"
+
+print_log "Executing the ipfs node2 in the background"
+
 ipfs daemon &
 
 PID_NODE2=$(ps aux | grep -i 'ipfs daemon' | awk 'NR==2{print $2}')
-echo
-echo "The node2 PID: $PID_NODE2"
-echo
 
-echo "Checking 2 ipfs nodes connected each other..."
+print_log "The node2 PID: $PID_NODE2"
+
+print_log "Checking 2 ipfs nodes connected each other..."
+
 PEER1=$(ipfs swarm peers)
 RETRY=0
 while [ "$PEER1" = "" ]
@@ -187,24 +273,20 @@ do
     sleep 1
     echo "Checking peer1 connection setup..."
     PEER1=$(ipfs swarm peers)
+    retry_10 $RETRY
     ((RETRY++))
-    if [[ "$RETRY" -eq "10" ]]
-    then
-        shutdown_ipfs
-        echo "Can not find the peer1 info from the ipfs node2. Exit the script."
-        exit 1
-    fi
 done
 
 echo "PEER1 = $PEER1"
 if [[ "$PEER1" != "$NODE_IP/$NODE_PORT_SWARM1/ipfs/$NODE_ID1" ]]
 then
-    echo "Can not find the peer1 info from the ipfs node2. Exit the script."
+    print_log "Can not find the peer1 info from the ipfs node2. Exit the script."
+
     shutdown_ipfs
     exit 1
 fi
 
-echo "Found peer1 info in the ipfs node2."
+print_log "Found peer1 info in the ipfs node2."
 
 export IPFS_PATH=$IPFS1_PATH
 PEER2=$(ipfs swarm peers)
@@ -212,31 +294,28 @@ RETRY=0
 while [ "$PEER2" = "" ]
 do
     sleep 1
-    echo "Checking peer2 connection setup..."
+
+    print_log "Checking peer2 connection setup..."
+
     PEER2=$(ipfs swarm peers)
+    retry_10 $RETRY
     ((RETRY++))
-    if [[ "$RETRY" -eq "10" ]]
-    then
-        shutdown_ipfs
-        echo "Can not find the peer2 info from the ipfs node1. Exit the script."
-        exit 1
-    fi
 done
 
 echo "PEER2 = $PEER2"
 if [[ "$PEER2" != "$NODE_IP/$NODE_PORT_SWARM2/ipfs/$NODE_ID2" ]]
 then
-    echo "Can not find the peer2 info from the ipfs node1. Exit the script."
+    print_log "Can not find the peer2 info from the ipfs node1. Exit the script."
+
     shutdown_ipfs
     exit 1
 fi
 
-echo "Found peer2 info in the ipfs node1."
+print_log "Found peer2 info in the ipfs node1."
 
-echo
-echo "Initialize the blockchain kernel custom network environment, it will take a while..."
-echo "You can check the bootstrap status by using <tail -f $LOG_BOOTSTRAP> under the IntegTest folder."
-echo
+print_log "Initialize the blockchain kernel custom network environment, it will take a while..."
+print_log "You can check the bootstrap status by using <tail -f $LOG_BOOTSTRAP> under the IntegTest folder."
+
 # This script assume the folder has the OAN java blockchain kernel and put it into the <oan> filder
 cd oan/tooling/customBootstrap
 nohup ./customNetworkBootstrap.sh > ../../../$LOG_BOOTSTRAP
@@ -244,13 +323,10 @@ cd ../../../
 
 check_bootstrap_log
 
-echo
-echo "OAN customm network setup finished."
-echo
+print_log "OAN customm network setup finished."
 
-echo
-echo "Launching the OAN kernel..."
-echo
+print_log "Launching the OAN kernel..."
+
 cd oan/
 nohup ./aion.sh -n custom > ../$LOG_KERNEL &
 cd ..
@@ -258,17 +334,19 @@ cd ..
 check_kernel_rpc_log
 
 PID_OAN=$(ps aux | grep -i 'org.aion.Aion -n custom' -m1 | awk -F ' ' '{print $2}')
-echo "The OAN kernel PID: $PID_OAN"
+
+print_log "The OAN kernel PID: $PID_OAN"
+
 if [[ "$PID_OAN" == "" ]]
 then
-    echo "Kernel launch failed. Exit the script."
+    print_log "Kernel launch failed. Exit the script."
+
     shutdown_ipfs
     exit 1
 fi
 
-echo
-echo "Launching the blocksigner..."
-echo
+print_log "Launching the blocksigner..."
+
 cd oan/tooling/externalStaker/
 nohup ./launchStaker.sh > ../../../$LOG_BLOCKSIGNER &
 cd ../../../
@@ -276,23 +354,90 @@ cd ../../../
 check_blocksigner_log
 
 PID_BLOCKSIGNER=$(ps aux | grep -i 'org.aion.staker.ExternalStaker' -m1 | awk -F ' ' '{print $2}')
-echo "The blockSigner PID: $PID_BLOCKSIGNER"
+
+print_log "The blockSigner PID: $PID_BLOCKSIGNER"
 
 
-echo "Start the integ tests..."
-#TODO: running Tests in here!!!
-#...................
-echo "End of the integ tests..."
+SWITCH_FROM_INTEGTEST_TO_TOOLING_PATH="../Publisher/tooling"
+SWITCH_FROM_TOOLING_TO_INTEGTEST_PATH="../../IntegTest"
+
+print_log "Start the integ tests..."
+
+# Deploy the maven on IPFS contract, This script assume the dev already put the contract jar in the <Pubisher/tooling> folder
+cd $SWITCH_FROM_INTEGTEST_TO_TOOLING_PATH
+./deployMavenContract.sh
+cd $SWITCH_FROM_TOOLING_TO_INTEGTEST_PATH
+
+READER_JAR_PATH=../Reader/build/main/Reader.jar:../lib/*
+KH="--kernelHostname"
+KP="--kernelPort"
+IH="--ipfsHostname"
+IP="--ipfsPort"
+LP="--listenPort"
+CA="--contractAddress"
+SB="--startingBlockNumber"
+#TODO: verify the reader read the deploy event log from the blockchain.
+
+# claim groupID
+print_log "claim the groupID < $GROUP_ID1 >"
+
+cd $SWITCH_FROM_INTEGTEST_TO_TOOLING_PATH
+./claimGroupId.sh $GROUP_ID1
+cd $SWITCH_FROM_TOOLING_TO_INTEGTEST_PATH
 
 
+ARTIFACT_ID="upstream"
+VERSION="1.0"
+TYPEJAR="1"
+TYPEPOM="0"
+JARFILE="upstream-1.0.jar"
+POMFILE="pom.xml"
 
-#Shutdown process. Notice: please shutdown blocksigner before shutdown the blockchain kernel.
-echo
-echo "Start shutdown process..."
-shutdown_ipfs
-shutdown_blocksigner
-shutdown_oan
+print_log "Publish the upstream file"
 
-echo
-echo "Integ test finished!"
-echo
+cd $SWITCH_FROM_INTEGTEST_TO_TOOLING_PATH
+# ./publish.sh [filename] [groupId] [artifactId] [version] [type]
+./publish.sh "$SWITCH_FROM_TOOLING_TO_INTEGTEST_PATH/Upstream/target/$JARFILE" $GROUP_ID1 $ARTIFACT_ID $VERSION $TYPEJAR
+./publish.sh "$SWITCH_FROM_TOOLING_TO_INTEGTEST_PATH/Upstream/$POMFILE" $GROUP_ID1 $ARTIFACT_ID $VERSION $TYPEPOM
+cd $SWITCH_FROM_TOOLING_TO_INTEGTEST_PATH
+
+
+# TODO: verify the reader read the claimID event log from the blockchain.
+nohup java -cp $READER_JAR_PATH Reader \
+         $KH $LOCAL_HOST $KP $KERNEL_RPC_PORT $IH $LOCAL_HOST $IP $NODE_PORT_API2 $LP $WEB_SERVER_LISTEN_PORT $CA $MAVEN_CONTRACT_DEPLOY_ADDRESS $SB $LOG_LISTEN_START_BLOCK \
+         > $LOG_READER &
+
+PID_READER=$(ps aux | grep -i 'Reader' -m1 | awk -F ' ' '{print $2}')
+
+print_log "The blockSigner PID: $PID_READER"
+
+check_reader_log "CLAIM: $GROUP_ID1"
+check_reader_log "PUBLISH: $GROUP_ID1 $ARTIFACT_ID $VERSION.jar"
+check_reader_log "PUBLISH: $GROUP_ID1 $ARTIFACT_ID $VERSION.pom"
+
+print_log "Check Downstream maven test..."
+
+cd Downstream
+mvn -U clean test > ../$LOG_MVN
+cd ..
+
+MVN_RESULT=$(cat $LOG_MVN | grep "BUILD SUCCESS" | wc -l)
+
+if [[ "$MVN_RESULT" -eq "0" ]]
+then
+    test_failure
+    TEST_RESULT="failure!"
+else
+    print_log "Declaim the groupID < $GROUP_ID1 >"
+
+    cd $SWITCH_FROM_INTEGTEST_TO_TOOLING_PATH
+    ./deClaimGroupId.sh $GROUP_ID1
+    cd $SWITCH_FROM_TOOLING_TO_INTEGTEST_PATH
+
+    check_reader_log "DECLAIM: $GROUP_ID1"
+
+    shutdown_all
+    TEST_RESULT="Success!"
+fi
+
+print_log "Integ test finished! Test $TEST_RESULT"
