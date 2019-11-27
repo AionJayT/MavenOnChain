@@ -27,7 +27,7 @@ public class WebServer {
         if (null != this.thread) {
             throw new AssertionError("Server already running");
         }
-        ServerSocket server = new ServerSocket(2000);
+        ServerSocket server = new ServerSocket(port);
         this.thread = new WebThread(this.ipfs, this.projection, server);
         this.thread.start();
     }

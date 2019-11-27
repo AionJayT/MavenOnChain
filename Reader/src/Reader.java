@@ -62,7 +62,6 @@ public class Reader {
                 // We aren't using interruption in this application.
                 throw new RuntimeException(e);
             }
-            keepRunning = false;
         }
         
         // For completeness (even though we don't currently hit this), stop the components.
