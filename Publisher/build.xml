@@ -40,6 +40,7 @@
                 <pathelement location="${dir.global.lib}/ipfs.jar"/>
                 <pathelement location="${dir.global.lib}/multiaddr.jar"/>
                 <pathelement location="${dir.global.lib}/multihash.jar"/>
+
             </classpath>
         </javac>
 

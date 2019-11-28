@@ -23,11 +23,11 @@ class MavenOnIPFSEvents {
             , new byte[0]);
     }
 
-    static void publish (String groupId, String artifactId, String version,  byte type, String cid) {
+    static void publish (String groupId, String artifactId, String version,  byte type, byte[] multihash) {
         byte[] data = new ABIStreamingEncoder()
             .encodeOneString(version)
             .encodeOneByte(type)
-            .encodeOneString(cid)
+            .encodeOneByteArray(multihash)
             .toBytes();
 
         Blockchain.log("publish".getBytes()

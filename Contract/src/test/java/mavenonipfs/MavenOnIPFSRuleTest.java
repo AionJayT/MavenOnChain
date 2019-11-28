@@ -109,7 +109,8 @@ public class MavenOnIPFSRuleTest {
         String artifactId = "the.oan";
         String version = "1.0.0";
         byte type = 0x01;   // we assume it is a "jar" type
-        String cid = "cid";
+        byte[] multiHash = new byte[32];
+        System.arraycopy("multihash".getBytes(), 0, multiHash, 0, "multihash".getBytes().length);
 
         // claim groupId first
         byte[] txData = ABIUtil.encodeMethodArguments(method1, groupId);
@@ -120,7 +121,7 @@ public class MavenOnIPFSRuleTest {
         Assert.assertTrue(status.isSuccess());
 
         // try to publish the maven
-        txData = ABIUtil.encodeMethodArguments(method2, groupId, artifactId, version, type, cid);
+        txData = ABIUtil.encodeMethodArguments(method2, groupId, artifactId, version, type, multiHash);
         result = avmRule.call(from, dappAddr, BigInteger.ZERO, txData);
 
         // checks the status of the transaction execution again
@@ -141,7 +142,7 @@ public class MavenOnIPFSRuleTest {
         System.arraycopy(artifactId.getBytes(), 0, log2, 0, artifactId.getBytes().length);
         Assert.assertArrayEquals(log2, result.getLogs().get(0).copyOfTopics().get(2));
 
-        byte[] logData = new ABIStreamingEncoder().encodeOneString(version).encodeOneByte(type).encodeOneString(cid).toBytes();
+        byte[] logData = new ABIStreamingEncoder().encodeOneString(version).encodeOneByte(type).encodeOneByteArray(multiHash).toBytes();
 
         Assert.assertArrayEquals(logData, result.getLogs().get(0).copyOfData());
     }

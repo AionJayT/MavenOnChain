@@ -1,5 +1,6 @@
 package org.aion.maven.blockchain;
 
+import io.ipfs.multihash.Multihash;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -20,11 +21,12 @@ public class PublishEventTest {
     public void testBasic() {
         Address sourceContractAddress = new Address(build32Bytes(1));
         String base58Hash = "QmWmyoMoctfbAaiEs2G46gpeUmhqFRDW6KWo64y5r581Vz";
+        Multihash multihash = Multihash.fromBase58(base58Hash);
         String version = "1.0";
         byte[] data = new ABIStreamingEncoder()
                 .encodeOneString(version)
                 .encodeOneByte((byte)0)
-                .encodeOneString(base58Hash)
+                .encodeOneByteArray(multihash.toBytes())
                 .toBytes();
         String groupId = "groupId";
         String artifactId = "artifactId";
@@ -38,7 +40,7 @@ public class PublishEventTest {
         Assert.assertEquals(artifactId, event.mavenTuple.artifactId);
         Assert.assertEquals(version, event.mavenTuple.version);
         Assert.assertEquals("pom", event.mavenTuple.type);
-        Assert.assertEquals(base58Hash, event.ipfsMultihash.toBase58());
+        Assert.assertArrayEquals(multihash.toBytes(), event.ipfsMultihash.toBytes());
     }
 
 
