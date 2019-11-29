@@ -60,6 +60,10 @@ public final class Topic {
         return new String(this.bytes, 0, indexOfNull, StandardCharsets.UTF_8);
     }
 
+    public Address readAsAddress() {
+        return new Address(this.bytes);
+    }
+
     @Override
     public int hashCode() {
         return Arrays.hashCode(this.bytes);
