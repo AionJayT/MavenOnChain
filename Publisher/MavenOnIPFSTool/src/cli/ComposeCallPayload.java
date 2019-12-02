@@ -17,12 +17,18 @@ public class ComposeCallPayload {
         String methodName = args[0];
         switch (methodName) {
             case "claimGroupId":
-                rawCallData = getRegisterGroupIdPayload(args);
-                break;
             case "deClaimGroupId":
+                if (args.length != 2) {
+                    System.err.println("getRegisterGroupIdPayload error!, input arguments size");
+                    System.exit(1);
+                }
                 rawCallData = getRegisterGroupIdPayload(args);
                 break;
             case "publish":
+                if (args.length != 6) {
+                    System.err.println("getPublishPayload error!, invalid input arguments size");
+                    System.exit(1);
+                }
                 rawCallData = getPublishPayload(args);
                 break;
             default:
@@ -47,7 +53,9 @@ public class ComposeCallPayload {
         encoder.encodeOneString(args[2]);   // artifactId
         encoder.encodeOneString(args[3]);   // version
         encoder.encodeOneByte(Byte.valueOf(args[4])); // type
-        encoder.encodeOneString(args[5]);   // cid
+
+        String arg5 = args[5].startsWith("0x") ? args[5].substring(2): args[5];
+        encoder.encodeOneByteArray(Utils.hexToBytes(arg5));   // multiHash
         return encoder.toBytes();
     }
 }

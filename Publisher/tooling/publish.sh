@@ -44,8 +44,8 @@ then
 fi
 
 echo "Push file $1 to the IPFS server..."
-CID="$(java -cp $PUBLISHER_JARS mavenonipfs.publisher.Publisher "--p" "$1")"
-echo "IPFS node returns $CID"
+MULTIHASH="$(java -cp $PUBLISHER_JARS mavenonipfs.publisher.Publisher "--p" "$1")"
+echo "IPFS node returns $MULTIHASH"
 
 
 echo "Get transaction counts"
@@ -55,7 +55,7 @@ echo "Got count $count"
 
 echo "Sending publish call..."
 # publish(String groupId, String artifactId, String version, String type, String cid)
-callPayload="$(java -cp $TOOLS_JAR cli.ComposeCallPayload "publish" "$2" "$3" "$4" "$5" "$CID")"
+callPayload="$(java -cp $TOOLS_JAR cli.ComposeCallPayload "publish" "$2" "$3" "$4" "$5" "$MULTIHASH")"
 receipt=`./rpc.sh --call "$PRIVATE_KEY" "$count" "$CONTRACT_ADDRESS" "$callPayload" "0" "$NODE_ADDRESS"`
 echo "$receipt"
 require_success $?

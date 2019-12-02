@@ -4,6 +4,7 @@ import io.ipfs.api.IPFS;
 import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -44,8 +45,11 @@ public class Publisher {
 
             NamedStreamable.FileWrapper file = new NamedStreamable.FileWrapper(path.toFile());
             MerkleNode result = ipfs.add(file).get(0);
-            System.out.println(result.hash.toString());
-            return result.hash.toString();
+            byte[] hash = result.hash.toBytes();
+
+            String hexString = String.format("%0" + (hash.length * 2) + "x", new BigInteger(1, hash));
+            System.out.println(hexString);
+            return hexString;
         } catch (IOException e) {
             e.printStackTrace();
         }

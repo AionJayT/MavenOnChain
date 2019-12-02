@@ -15,7 +15,7 @@ import org.junit.Test;
 
 public class publisherTest {
 
-    private static String cid;
+    private static String multiHash;
     private IPFS ipfs;
     private String testFileName = "example.txt";
 
@@ -29,7 +29,7 @@ public class publisherTest {
     public void tearDown() {
         try {
             // Remove the file
-            List<Multihash> result = ipfs.pin.rm(Multihash.fromBase58(cid));
+            List<Multihash> result = ipfs.pin.rm(Multihash.fromHex(multiHash));
             Assert.assertNotNull(result);
             Assert.assertEquals(1, result.size());
             ipfs.repo.gc();
@@ -57,12 +57,12 @@ public class publisherTest {
         }
 
         // Publish the file
-        cid = Publisher.publish(testFileName, null);
+        multiHash = Publisher.publish(testFileName, null);
 
         try {
             // Check the file has been stored in the IPFS node
-            assert cid != null;
-            byte[] stream = ipfs.cat(Multihash.fromBase58(cid));
+            assert multiHash != null;
+            byte[] stream = ipfs.cat(Multihash.fromHex(multiHash));
             Assert.assertNotNull(stream);
             Assert.assertArrayEquals((fileContain).getBytes(), stream);
         } catch (IOException e) {

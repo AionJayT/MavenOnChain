@@ -15,7 +15,7 @@ import io.ipfs.multihash.Multihash;
  * -Topic 1:  (String) "publish"
  * -Topic 2:  (String) groupId
  * -Topic 3:  (String) artifactId
- * -data:  ABIEncoded:  (String) version, (byte) type, (String) base58 MultiHash
+ * -data:  ABIEncoded:  (String) version, (byte) type, (byte[]) multiHash
  * (note that type 0 = pom, 1 = jar)
  */
 public class PublishEvent {
@@ -39,10 +39,9 @@ public class PublishEvent {
         String typeName = (0 == type)
                 ? "pom"
                 : "jar";
-        String cid = decoder.decodeOneString();
+        byte[] multihash = decoder.decodeOneByteArray();
         MavenTuple mavenTuple = new MavenTuple(groupId, artifactId, version, typeName);
-        // TODO:  Change the cid to just a binary encoding instead of a String rendering.
-        Multihash ipfsMultihash = Multihash.fromBase58(cid);
+        Multihash ipfsMultihash = new Multihash(multihash);
         return new PublishEvent(mavenTuple, ipfsMultihash);
     }
 
